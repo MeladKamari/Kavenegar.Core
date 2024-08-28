@@ -6,13 +6,8 @@ namespace Kavenegar.Core.Json
 
  public class JsonArray : JsonObject
  {
-	public List<JsonObject> Array { get; set; }
+	public List<JsonObject> Array { get; set; } = new List<JsonObject>();
 	private List<JsonObject>.Enumerator _e;
-
-	public JsonArray()
-	{
-	 Array = new List<JsonObject>();
-	}
 
 	public void AddElementToArray(JsonObject arrayElement)
 	{
@@ -47,11 +42,7 @@ namespace Kavenegar.Core.Json
 	 return false;
 	}
 
-	public int Count
-	{
-	 get { return Array.Count; }
-	}
-
+	public int Count => Array.Count;
  }
 
 }

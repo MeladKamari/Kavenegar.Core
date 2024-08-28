@@ -4,11 +4,8 @@ namespace Kavenegar.Core.Models
  public class AccountInfoResult
  {
 	public long RemainCredit { get; set; }
-	public long Expiredate { get; set; }
-	public DateTime GregorianExpiredate
-	{
-	 get { return Utils.DateHelper.UnixTimestampToDateTime(Expiredate); }
-	}
+	public long ExpireDate { get; set; }
+	public DateTime GregorianExpireDate => Utils.DateHelper.UnixTimestampToDateTime(ExpireDate);
 	public string Type { get; set; }
  }
 }

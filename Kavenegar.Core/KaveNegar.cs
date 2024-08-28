@@ -1,139 +1,46 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text;
+using System.Net.Http;
+using System.Threading.Tasks;
 using Kavenegar.Core.Exceptions;
 using Kavenegar.Core.Models;
 using Kavenegar.Core.Models.Enums;
 using Kavenegar.Core.Utils;
-using System.Net.Http;
 using Newtonsoft.Json;
-using System.Threading.Tasks;
 
-namespace Kavenegar
+namespace Kavenegar.Core
 {
-    internal class ReturnResult
+    internal class KaveNegar : IKaveNegar
     {
-        public Result @Return { get; set; }
-        public object entries { get; set; }
-    }
+        private readonly HttpClient _client;
+        private const string ApiPath = "{0}/{1}.{2}";
+        private const string BaseUrl = @"https://api.kavenegar.com/v1";
 
-    internal class Result
-    {
-        public int status { get; set; }
-        public string message { get; set; }
-    }
-
-    internal class ReturnSend
-    {
-        public Result @Return { get; set; }
-        public List<SendResult> entries { get; set; }
-    }
-
-    internal class ReturnStatus
-    {
-        public Result result { get; set; }
-        public List<StatusResult> entries { get; set; }
-    }
-
-    internal class ReturnStatusLocalMessageId
-    {
-        public Result result { get; set; }
-        public List<StatusLocalMessageIdResult> entries { get; set; }
-    }
-
-    internal class ReturnReceive
-    {
-        public Result result { get; set; }
-        public List<ReceiveResult> entries { get; set; }
-    }
-
-    internal class ReturnCountOutbox
-    {
-        public Result result { get; set; }
-        public List<CountOutboxResult> entries { get; set; }
-    }
-
-    internal class ReturnCountInbox
-    {
-        public Result result { get; set; }
-        public List<CountInboxResult> entries { get; set; }
-
-    }
-
-    internal class ReturnCountPostalCode
-    {
-        public Result result { get; set; }
-        public List<CountPostalCodeResult> entries { get; set; }
-    }
-
-    internal class ReturnAccountInfo
-    {
-        public Result result { get; set; }
-        public AccountInfoResult entries { get; set; }
-    }
-
-    internal class ReturnAccountConfig
-    {
-        public Result result { get; set; }
-        public AccountConfigResult entries { get; set; }
-    }
-
-    public class KavenegarApi
-    {
-        private string _apikey;
-        private static HttpClient _client;
-        private int _returnCode = 200;
-        private string _returnMessage = "";
-        private const string Apipath = "{0}/{1}.{2}";
-        private const string BaseUrl = "https://api.kavenegar.com/v1";
-        public KavenegarApi(string apikey)
+        internal KaveNegar(KaveNegarConfig config)
         {
-            _apikey = apikey;
-
+            if (string.IsNullOrEmpty(config.ApiKey))
+                throw new ArgumentNullException("ApiKey الزامی است.");
             _client = new HttpClient
             {
-                BaseAddress = new Uri($"{BaseUrl}/{_apikey}/")
+                BaseAddress = new Uri($"{BaseUrl}/{ config.ApiKey}/")
             };
-
-        }
-
-        public string ApiKey
-        {
-            set => _apikey = value;
-            get => _apikey;
-        }
-
-        public int ReturnCode
-        {
-            get { return _returnCode; }
-
-        }
-
-        public string ReturnMessage
-        {
-            get { return _returnMessage; }
-
         }
 
         private string GetApiPath(string _base, string method, string output)
         {
-            return string.Format(Apipath, _base, method, output);
+            return string.Format(ApiPath, _base, method, output);
         }
 
         private async Task<string> Execute(string path, Dictionary<string, object> _params)
         {
             var nvc = _params?.Select(x => new KeyValuePair<string, string>(x.Key, x.Value?.ToString()));
-            
-            var postdata = nvc != null ?  new FormUrlEncodedContent(nvc):null;
 
-            var response = await _client.PostAsync(path, postdata);
+            var postData = nvc != null ? new FormUrlEncodedContent(nvc) : null;
+
+            var response = await _client.PostAsync(path, postData);
             var responseBody = await response.Content.ReadAsStringAsync();
-
-            // System.Diagnostics.Debug.WriteLine(responseBody);
-
             try
             {
                 var result = JsonConvert.DeserializeObject<ReturnResult>(responseBody);
@@ -148,6 +55,7 @@ namespace Kavenegar
                 throw;
             }
         }
+
         public async Task<List<SendResult>> Send(string sender, List<string> receptor, string message)
         {
             return await Send(sender, receptor, message, MessageType.MobileMemory, DateTime.MinValue);
@@ -157,25 +65,33 @@ namespace Kavenegar
         {
             return await Send(sender, receptor, message, MessageType.MobileMemory, DateTime.MinValue);
         }
-        public async Task<SendResult> Send(string sender, string receptor, string message, MessageType type, DateTime date)
+
+        public async Task<SendResult> Send(string sender, string receptor, string message, MessageType type,
+            DateTime date)
         {
             List<String> receptors = new List<String> { receptor };
             return (await Send(sender, receptors, message, type, date))[0];
         }
-        public async Task<List<SendResult>> Send(string sender, List<string> receptor, string message, MessageType type, DateTime date)
+
+        public async Task<List<SendResult>> Send(string sender, List<string> receptor, string message, MessageType type,
+            DateTime date)
         {
             return await Send(sender, receptor, message, type, date, null);
         }
-        public async Task<SendResult> Send(string sender, string receptor, string message, MessageType type, DateTime date, string localid)
+
+        public async Task<SendResult> Send(string sender, string receptor, string message, MessageType type,
+            DateTime date, string localid)
         {
             var receptors = new List<String> { receptor };
             var localids = new List<String> { localid };
             return (await Send(sender, receptors, message, type, date, localids))[0];
         }
+
         public async Task<SendResult> Send(string sender, string receptor, string message, string localid)
         {
             return await Send(sender, receptor, message, MessageType.MobileMemory, DateTime.MinValue, localid);
         }
+
         public async Task<List<SendResult>> Send(string sender, List<string> receptors, string message, string localid)
         {
             List<String> localids = new List<String>();
@@ -183,69 +99,82 @@ namespace Kavenegar
             {
                 localids.Add(localid);
             }
+
             return await Send(sender, receptors, message, MessageType.MobileMemory, DateTime.MinValue, localids);
         }
-        public async Task<List<SendResult>> Send(string sender, List<string> receptor, string message, MessageType type, DateTime date, List<string> localids)
+
+        public async Task<List<SendResult>> Send(string sender, List<string> receptor, string message, MessageType type,
+            DateTime date, List<string> localids)
         {
             var path = GetApiPath("sms", "send", "json");
             var param = new Dictionary<string, object>
-        {
-            {"sender", System.Net.WebUtility.HtmlEncode(sender)},
-            {"receptor", System.Net.WebUtility.HtmlEncode(StringHelper.Join(",", receptor.ToArray()))},
-            {"message", message},
-            {"type", (int) type},
-            {"date", date == DateTime.MinValue ? 0 : DateHelper.DateTimeToUnixTimestamp(date)}
-        };
+            {
+                { "sender", System.Net.WebUtility.HtmlEncode(sender) },
+                { "receptor", System.Net.WebUtility.HtmlEncode(StringHelper.Join(",", receptor.ToArray())) },
+                { "message", message },
+                { "type", (int)type },
+                { "date", date == DateTime.MinValue ? 0 : DateHelper.DateTimeToUnixTimestamp(date) }
+            };
             if (localids != null && localids.Count > 0)
             {
                 param.Add("localid", StringHelper.Join(",", localids.ToArray()));
             }
+
             var responseBody = await Execute(path, param);
             var l = JsonConvert.DeserializeObject<ReturnSend>(responseBody);
             return l.entries;
         }
 
-        public async Task<List<SendResult>> SendArray(List<string> senders, List<string> receptors, List<string> messages)
+        public async Task<List<SendResult>> SendArray(List<string> senders, List<string> receptors,
+            List<string> messages)
         {
             var types = new List<MessageType>();
             for (var i = 0; i <= senders.Count - 1; i++)
             {
                 types.Add(MessageType.MobileMemory);
             }
+
             return await SendArray(senders, receptors, messages, types, DateTime.MinValue, null);
         }
 
-        public async Task<List<SendResult>> SendArray(string sender, List<string> receptors, List<string> messages, MessageType type, DateTime date)
+        public async Task<List<SendResult>> SendArray(string sender, List<string> receptors, List<string> messages,
+            MessageType type, DateTime date)
         {
             var senders = new List<string>();
             for (var i = 0; i < receptors.Count; i++)
             {
                 senders.Add(sender);
             }
+
             var types = new List<MessageType>();
             for (var i = 0; i <= senders.Count - 1; i++)
             {
                 types.Add(MessageType.MobileMemory);
             }
+
             return await SendArray(senders, receptors, messages, types, date, null);
         }
 
-        public async Task<List<SendResult>> SendArray(string sender, List<string> receptors, List<string> messages, MessageType type, DateTime date, string localmessageids)
+        public async Task<List<SendResult>> SendArray(string sender, List<string> receptors, List<string> messages,
+            MessageType type, DateTime date, string localmessageids)
         {
             var senders = new List<String>();
             for (var i = 0; i < receptors.Count; i++)
             {
                 senders.Add(sender);
             }
+
             List<MessageType> types = new List<MessageType>();
             for (var i = 0; i <= senders.Count - 1; i++)
             {
                 types.Add(MessageType.MobileMemory);
             }
+
             return await SendArray(senders, receptors, messages, types, date, new List<String>() { localmessageids });
         }
 
-        public async Task<List<SendResult>> SendArray(string sender, List<string> receptors, List<string> messages, string localmessageid)
+        public async Task<List<SendResult>> SendArray(string sender, List<string> receptors, List<string> messages,
+            string localmessageid)
         {
             List<String> senders = new List<String>();
             for (var i = 0; i < receptors.Count; i++)
@@ -256,22 +185,26 @@ namespace Kavenegar
             return await SendArray(senders, receptors, messages, localmessageid);
         }
 
-        public async Task<List<SendResult>> SendArray(List<string> senders, List<string> receptors, List<string> messages, string localmessageid)
+        public async Task<List<SendResult>> SendArray(List<string> senders, List<string> receptors,
+            List<string> messages, string localmessageid)
         {
             var types = new List<MessageType>();
             for (var i = 0; i <= receptors.Count - 1; i++)
             {
                 types.Add(MessageType.MobileMemory);
             }
+
             var localmessageids = new List<string>();
             for (var i = 0; i <= receptors.Count - 1; i++)
             {
                 localmessageids.Add(localmessageid);
             }
+
             return await SendArray(senders, receptors, messages, types, DateTime.MinValue, localmessageids);
         }
 
-        public async Task<List<SendResult>> SendArray(List<string> senders, List<string> receptors, List<string> messages, List<MessageType> types, DateTime date, List<string> localmessageids)
+        public async Task<List<SendResult>> SendArray(List<string> senders, List<string> receptors,
+            List<string> messages, List<MessageType> types, DateTime date, List<string> localmessageids)
         {
             String path = GetApiPath("sms", "sendarray", "json");
             var jsonSenders = JsonConvert.SerializeObject(senders);
@@ -279,24 +212,25 @@ namespace Kavenegar
             var jsonMessages = JsonConvert.SerializeObject(messages);
             var jsonTypes = JsonConvert.SerializeObject(types);
             var param = new Dictionary<string, object>
-        {
-            {"message", jsonMessages},
-            {"sender", jsonSenders},
-            {"receptor", jsonReceptors},
-            {"type", jsonTypes},
-            {"date", date == DateTime.MinValue ? 0 : DateHelper.DateTimeToUnixTimestamp(date)}
-        };
+            {
+                { "message", jsonMessages },
+                { "sender", jsonSenders },
+                { "receptor", jsonReceptors },
+                { "type", jsonTypes },
+                { "date", date == DateTime.MinValue ? 0 : DateHelper.DateTimeToUnixTimestamp(date) }
+            };
             if (localmessageids != null && localmessageids.Count > 0)
             {
                 param.Add("localmessageids", StringHelper.Join(",", localmessageids.ToArray()));
             }
 
-            var responsebody = await Execute(path, param);
-            var l = JsonConvert.DeserializeObject<ReturnSend>(responsebody);
+            var responseBody = await Execute(path, param);
+            var l = JsonConvert.DeserializeObject<ReturnSend>(responseBody);
             if (l.entries == null)
             {
                 return new List<SendResult>();
             }
+
             return l.entries;
         }
 
@@ -304,15 +238,16 @@ namespace Kavenegar
         {
             string path = GetApiPath("sms", "status", "json");
             var param = new Dictionary<string, object>
-        {
-            {"messageid", StringHelper.Join(",", messageids.ToArray())}
-        };
-            var responsebody = await Execute(path, param);
-            var l = JsonConvert.DeserializeObject<ReturnStatus>(responsebody);
+            {
+                { "messageid", StringHelper.Join(",", messageids.ToArray()) }
+            };
+            var responseBody = await Execute(path, param);
+            var l = JsonConvert.DeserializeObject<ReturnStatus>(responseBody);
             if (l.entries == null)
             {
                 return new List<StatusResult>();
             }
+
             return l.entries;
         }
 
@@ -327,8 +262,8 @@ namespace Kavenegar
         {
             string path = GetApiPath("sms", "statuslocalmessageid", "json");
             var param = new Dictionary<string, object> { { "localid", StringHelper.Join(",", messageids.ToArray()) } };
-            var responsebody = await Execute(path, param);
-            var l = JsonConvert.DeserializeObject<ReturnStatusLocalMessageId>(responsebody);
+            var responseBody = await Execute(path, param);
+            var l = JsonConvert.DeserializeObject<ReturnStatusLocalMessageId>(responseBody);
             return l.entries;
         }
 
@@ -341,19 +276,21 @@ namespace Kavenegar
         public async Task<List<SendResult>> Select(List<string> messageids)
         {
             var path = GetApiPath("sms", "select", "json");
-            var param = new Dictionary<string, object> { { "messageid", StringHelper.Join(",", messageids.ToArray()) } };
-            var responsebody = await Execute(path, param);
-            var l = JsonConvert.DeserializeObject<ReturnSend>(responsebody);
+            var param = new Dictionary<string, object>
+                { { "messageid", StringHelper.Join(",", messageids.ToArray()) } };
+            var responseBody = await Execute(path, param);
+            var l = JsonConvert.DeserializeObject<ReturnSend>(responseBody);
             if (l.entries == null)
             {
                 return new List<SendResult>();
             }
+
             return l.entries;
         }
 
-        public async Task<SendResult> Select(string messageid)
+        public async Task<SendResult> Select(string messageId)
         {
-            var ids = new List<String> { messageid };
+            var ids = new List<String> { messageId };
             var result = await Select(ids);
             return result.Count == 1 ? result[0] : null;
         }
@@ -372,13 +309,13 @@ namespace Kavenegar
         {
             String path = GetApiPath("sms", "selectoutbox", "json");
             var param = new Dictionary<string, object>
-         {
-             {"startdate", startdate == DateTime.MinValue ? 0 : DateHelper.DateTimeToUnixTimestamp(startdate)},
-             {"enddate", enddate == DateTime.MinValue ? 0 : DateHelper.DateTimeToUnixTimestamp(enddate)},
-             {"sender", sender}
-         };
-            var responsebody = await Execute(path, param);
-            var l = JsonConvert.DeserializeObject<ReturnSend>(responsebody);
+            {
+                { "startdate", startdate == DateTime.MinValue ? 0 : DateHelper.DateTimeToUnixTimestamp(startdate) },
+                { "enddate", enddate == DateTime.MinValue ? 0 : DateHelper.DateTimeToUnixTimestamp(enddate) },
+                { "sender", sender }
+            };
+            var responseBody = await Execute(path, param);
+            var l = JsonConvert.DeserializeObject<ReturnSend>(responseBody);
             return l.entries;
         }
 
@@ -391,8 +328,8 @@ namespace Kavenegar
         {
             var path = GetApiPath("sms", "latestoutbox", "json");
             var param = new Dictionary<string, object> { { "pagesize", pagesize }, { "sender", sender } };
-            var responsebody = await Execute(path, param);
-            var l = JsonConvert.DeserializeObject<ReturnSend>(responsebody);
+            var responseBody = await Execute(path, param);
+            var l = JsonConvert.DeserializeObject<ReturnSend>(responseBody);
             return l.entries;
         }
 
@@ -410,17 +347,18 @@ namespace Kavenegar
         {
             string path = GetApiPath("sms", "countoutbox", "json");
             var param = new Dictionary<string, object>
-         {
-             {"startdate", startdate == DateTime.MinValue ? 0 : DateHelper.DateTimeToUnixTimestamp(startdate)},
-             {"enddate", enddate == DateTime.MinValue ? 0 : DateHelper.DateTimeToUnixTimestamp(enddate)},
-             {"status", status}
-         };
-            var responsebody = await Execute(path, param);
-            var l = JsonConvert.DeserializeObject<ReturnCountOutbox>(responsebody);
+            {
+                { "startdate", startdate == DateTime.MinValue ? 0 : DateHelper.DateTimeToUnixTimestamp(startdate) },
+                { "enddate", enddate == DateTime.MinValue ? 0 : DateHelper.DateTimeToUnixTimestamp(enddate) },
+                { "status", status }
+            };
+            var responseBody = await Execute(path, param);
+            var l = JsonConvert.DeserializeObject<ReturnCountOutbox>(responseBody);
             if (l.entries == null || l.entries[0] == null)
             {
                 return new CountOutboxResult();
             }
+
             return l.entries[0];
         }
 
@@ -428,11 +366,11 @@ namespace Kavenegar
         {
             string path = GetApiPath("sms", "cancel", "json");
             var param = new Dictionary<string, object>
-        {
-            {"messageid", StringHelper.Join(",", ids.ToArray())}
-        };
-            var responsebody = await Execute(path, param);
-            var l = JsonConvert.DeserializeObject<ReturnStatus>(responsebody);
+            {
+                { "messageid", StringHelper.Join(",", ids.ToArray()) }
+            };
+            var responseBody = await Execute(path, param);
+            var l = JsonConvert.DeserializeObject<ReturnStatus>(responseBody);
             return l.entries;
         }
 
@@ -447,12 +385,13 @@ namespace Kavenegar
         {
             String path = GetApiPath("sms", "receive", "json");
             var param = new Dictionary<string, object> { { "linenumber", line }, { "isread", isread } };
-            var responsebody = await Execute(path, param);
-            var l = JsonConvert.DeserializeObject<ReturnReceive>(responsebody);
+            var responseBody = await Execute(path, param);
+            var l = JsonConvert.DeserializeObject<ReturnReceive>(responseBody);
             if (l.entries == null)
             {
                 return new List<ReceiveResult>();
             }
+
             return l.entries;
         }
 
@@ -466,18 +405,19 @@ namespace Kavenegar
             return await CountInbox(startdate, enddate, linenumber, 0);
         }
 
-        public async Task<CountInboxResult> CountInbox(DateTime startdate, DateTime enddate, String linenumber, int isread)
+        public async Task<CountInboxResult> CountInbox(DateTime startdate, DateTime enddate, String linenumber,
+            int isread)
         {
             var path = GetApiPath("sms", "countoutbox", "json");
             var param = new Dictionary<string, object>
-        {
-            {"startdate", startdate == DateTime.MinValue ? 0 : DateHelper.DateTimeToUnixTimestamp(startdate)},
-            {"enddate", enddate == DateTime.MinValue ? 0 : DateHelper.DateTimeToUnixTimestamp(enddate)},
-            {"linenumber", linenumber},
-            {"isread", isread}
-        };
-            var responsebody = await Execute(path, param);
-            var l = JsonConvert.DeserializeObject<ReturnCountInbox>(responsebody);
+            {
+                { "startdate", startdate == DateTime.MinValue ? 0 : DateHelper.DateTimeToUnixTimestamp(startdate) },
+                { "enddate", enddate == DateTime.MinValue ? 0 : DateHelper.DateTimeToUnixTimestamp(enddate) },
+                { "linenumber", linenumber },
+                { "isread", isread }
+            };
+            var responseBody = await Execute(path, param);
+            var l = JsonConvert.DeserializeObject<ReturnCountInbox>(responseBody);
             return l.entries[0];
         }
 
@@ -485,57 +425,61 @@ namespace Kavenegar
         {
             String path = GetApiPath("sms", "countpostalcode", "json");
             var param = new Dictionary<string, object> { { "postalcode", postalcode } };
-            var responsebody = await Execute(path, param);
-            var l = JsonConvert.DeserializeObject<ReturnCountPostalCode>(responsebody);
+            var responseBody = await Execute(path, param);
+            var l = JsonConvert.DeserializeObject<ReturnCountPostalCode>(responseBody);
             return l.entries;
         }
 
-        public async Task<List<SendResult>> SendByPostalCode(long postalcode, String sender, String message, long mcistartIndex, long mcicount, long mtnstartindex, long mtncount)
+        public async Task<List<SendResult>> SendByPostalCode(long postalcode, String sender, String message,
+            long mcistartIndex, long mcicount, long mtnstartindex, long mtncount)
         {
-            return await SendByPostalCode(postalcode, sender, message, mcistartIndex, mcicount, mtnstartindex, mtncount, DateTime.MinValue);
+            return await SendByPostalCode(postalcode, sender, message, mcistartIndex, mcicount, mtnstartindex, mtncount,
+                DateTime.MinValue);
         }
 
-        public async Task<List<SendResult>> SendByPostalCode(long postalcode, String sender, String message, long mcistartIndex, long mcicount, long mtnstartindex, long mtncount, DateTime date)
+        public async Task<List<SendResult>> SendByPostalCode(long postalcode, String sender, String message,
+            long mcistartIndex, long mcicount, long mtnstartindex, long mtncount, DateTime date)
         {
             var path = GetApiPath("sms", "sendbypostalcode", "json");
             var param = new Dictionary<string, object>
-        {
-            {"postalcode", postalcode},
-            {"sender", sender},
-            {"message", System.Net.WebUtility.HtmlEncode(message)},
-            {"mcistartIndex", mcistartIndex},
-            {"mcicount", mcicount},
-            {"mtnstartindex", mtnstartindex},
-            {"mtncount", mtncount},
-            {"date", date == DateTime.MinValue ? 0 : DateHelper.DateTimeToUnixTimestamp(date)}
-        };
-            var responsebody = await Execute(path, param);
-            var l = JsonConvert.DeserializeObject<ReturnSend>(responsebody);
+            {
+                { "postalcode", postalcode },
+                { "sender", sender },
+                { "message", System.Net.WebUtility.HtmlEncode(message) },
+                { "mcistartIndex", mcistartIndex },
+                { "mcicount", mcicount },
+                { "mtnstartindex", mtnstartindex },
+                { "mtncount", mtncount },
+                { "date", date == DateTime.MinValue ? 0 : DateHelper.DateTimeToUnixTimestamp(date) }
+            };
+            var responseBody = await Execute(path, param);
+            var l = JsonConvert.DeserializeObject<ReturnSend>(responseBody);
             return l.entries;
         }
 
         public async Task<AccountInfoResult> AccountInfo()
         {
             var path = GetApiPath("account", "info", "json");
-            var responsebody = await Execute(path, null);
-            var l = JsonConvert.DeserializeObject<ReturnAccountInfo>(responsebody);
+            var responseBody = await Execute(path, null);
+            var l = JsonConvert.DeserializeObject<ReturnAccountInfo>(responseBody);
             return l.entries;
         }
 
-        public async Task<AccountConfigResult> AccountConfig(string apilogs, string dailyreport, string debugmode, string defaultsender, int? mincreditalarm, string resendfailed)
+        public async Task<AccountConfigResult> AccountConfig(string apilogs, string dailyreport, string debugmode,
+            string defaultsender, int? mincreditalarm, string resendfailed)
         {
             var path = GetApiPath("account", "config", "json");
             var param = new Dictionary<string, object>
-        {
-            {"apilogs", apilogs},
-            {"dailyreport", dailyreport},
-            {"debugmode", debugmode},
-            {"defaultsender", defaultsender},
-            {"mincreditalarm", mincreditalarm},
-            {"resendfailed", resendfailed}
-        };
-            var responsebody = await Execute(path, param);
-            var l = JsonConvert.DeserializeObject<ReturnAccountConfig>(responsebody);
+            {
+                { "apilogs", apilogs },
+                { "dailyreport", dailyreport },
+                { "debugmode", debugmode },
+                { "defaultsender", defaultsender },
+                { "mincreditalarm", mincreditalarm },
+                { "resendfailed", resendfailed }
+            };
+            var responseBody = await Execute(path, param);
+            var l = JsonConvert.DeserializeObject<ReturnAccountConfig>(responseBody);
             return l.entries;
         }
 
@@ -543,44 +487,54 @@ namespace Kavenegar
         {
             return await VerifyLookup(receptor, token, null, null, template, VerifyLookupType.Sms);
         }
-        public async Task<SendResult> VerifyLookup(string receptor, string token, string template, VerifyLookupType type)
+
+        public async Task<SendResult> VerifyLookup(string receptor, string token, string template,
+            VerifyLookupType type)
         {
             return await VerifyLookup(receptor, token, null, null, template, type);
         }
-        public async Task<SendResult> VerifyLookup(string receptor, string token, string token2, string token3, string template)
+
+        public async Task<SendResult> VerifyLookup(string receptor, string token, string token2, string token3,
+            string template)
         {
             return await VerifyLookup(receptor, token, token2, token3, template, VerifyLookupType.Sms);
         }
-        public async Task<SendResult> VerifyLookup(string receptor, string token, string token2, string token3, string token10, string template)
+
+        public async Task<SendResult> VerifyLookup(string receptor, string token, string token2, string token3,
+            string token10, string template)
         {
             return await VerifyLookup(receptor, token, token2, token3, token10, template, VerifyLookupType.Sms);
         }
-        public async Task<SendResult> VerifyLookup(string receptor, string token, string token2, string token3, string template, VerifyLookupType type)
+
+        public async Task<SendResult> VerifyLookup(string receptor, string token, string token2, string token3,
+            string template, VerifyLookupType type)
         {
             return await VerifyLookup(receptor, token, token2, token3, null, template, type);
         }
 
-        public async Task<SendResult> VerifyLookup(string receptor, string token, string token2, string token3, string token10, string template, VerifyLookupType type)
+        public async Task<SendResult> VerifyLookup(string receptor, string token, string token2, string token3,
+            string token10, string template, VerifyLookupType type)
         {
             return await VerifyLookup(receptor, token, token2, token3, token10, null, template, type);
         }
 
-        public async Task<SendResult> VerifyLookup(string receptor, string token, string token2, string token3, string token10, string token20, string template, VerifyLookupType type)
+        public async Task<SendResult> VerifyLookup(string receptor, string token, string token2, string token3,
+            string token10, string token20, string template, VerifyLookupType type)
         {
             var path = GetApiPath("verify", "lookup", "json");
             var param = new Dictionary<string, object>
             {
-                {"receptor", receptor},
-                {"template", template},
-                {"token", token},
-                {"token2", token2},
-                {"token3", token3},
-                {"token10", token10},
-                {"token20", token20},
-                {"type", type},
+                { "receptor", receptor },
+                { "template", template },
+                { "token", token },
+                { "token2", token2 },
+                { "token3", token3 },
+                { "token10", token10 },
+                { "token20", token20 },
+                { "type", type },
             };
-            var responsebody = await Execute(path, param);
-            var l = JsonConvert.DeserializeObject<ReturnSend>(responsebody);
+            var responseBody = await Execute(path, param);
+            var l = JsonConvert.DeserializeObject<ReturnSend>(responseBody);
             return l.entries[0];
         }
 
@@ -591,18 +545,20 @@ namespace Kavenegar
         {
             return (await CallMakeTTS(message, new List<string> { receptor }, null, null))[0];
         }
+
         public async Task<List<SendResult>> CallMakeTTS(string message, List<string> receptor)
         {
             return await CallMakeTTS(message, receptor, null, null);
         }
 
-        public async Task<List<SendResult>> CallMakeTTS(string message, List<string> receptor, DateTime? date, List<string> localid)
+        public async Task<List<SendResult>> CallMakeTTS(string message, List<string> receptor, DateTime? date,
+            List<string> localid)
         {
             var path = GetApiPath("call", "maketts", "json");
             var param = new Dictionary<string, object>
             {
-                {"receptor", StringHelper.Join(",", receptor.ToArray())},
-                {"message", System.Net.WebUtility.HtmlEncode(message)},
+                { "receptor", StringHelper.Join(",", receptor.ToArray()) },
+                { "message", System.Net.WebUtility.HtmlEncode(message) },
             };
             if (date != null)
                 param.Add("date", DateHelper.DateTimeToUnixTimestamp(date.Value));
@@ -614,6 +570,13 @@ namespace Kavenegar
         }
 
         #endregion << CallMakeTTS >>
-
     }
+
+
+    public class KaveNegarConfig
+    {
+        public string ApiKey { get; set; }
+    }
+    
+    
 }

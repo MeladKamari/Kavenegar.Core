@@ -9,7 +9,7 @@ namespace Kavenegar.Core.Models.Enums
 	ExpiredApiKey = 102,
 	AccountDisabled = 103,
 	NotEnoughCredit = 104,
-	ServerisBusy = 105,
+	ServerIsBusy = 105,
 	UndefinedCommand = 106,
 	RequestFailed = 107,
 	ParametersBroken = 108,

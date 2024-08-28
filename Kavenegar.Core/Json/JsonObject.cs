@@ -11,12 +11,7 @@ namespace Kavenegar.Core.Json
 
  public class JsonObject
  {
-	public Dictionary<String, JsonObject> Values;
-
-	public JsonObject()
-	{
-	 Values = new Dictionary<String, JsonObject>();
-	}
+	public Dictionary<String, JsonObject> Values = new Dictionary<String, JsonObject>();
 
 	public void AddJsonValue(String textTag, JsonObject newObject)
 	{

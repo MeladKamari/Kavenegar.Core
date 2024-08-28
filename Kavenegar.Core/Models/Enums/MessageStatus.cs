@@ -3,7 +3,7 @@ namespace Kavenegar.Core.Models.Enums
  public enum MessageStatus
  {
 	Queued = 1,
-	Schulded = 2,
+	Scheduled = 2,
 	SentToCenter = 4,
 	Delivered = 10,
 	Undelivered = 11,

@@ -5,14 +5,8 @@ namespace Kavenegar.Core.Models
  {
 	public long Date { get; set; }
 
-	public DateTime GregorianDate
-	{
-	 get
-	 {
-		return Utils.DateHelper.UnixTimestampToDateTime(Date);
-	 }
-	}
-	
+	public DateTime GregorianDate => Utils.DateHelper.UnixTimestampToDateTime(Date);
+
 	public long MessageId { get; set; }
 
 	public string Sender { get; set; }

@@ -11,10 +11,6 @@ namespace Kavenegar.Core.Exceptions
 	 _result = (MetaCode)code;
 	}
 
-	public MetaCode Code
-	{
-	 get { return _result; }
-	}
-
+	public MetaCode Code => _result;
  }
 }
