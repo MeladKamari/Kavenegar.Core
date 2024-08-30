@@ -1,0 +1,75 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Version>1.0.1</Version>
+
+    <TargetFrameworks>netstandard2.0;net6.0;net8.0</TargetFrameworks>
+    <Description>A cross-platform library for the kavenegar sms provider; written in C#</Description>
+    <RootNamespace>KaveNegarDotNet</RootNamespace>
+    <AssemblyTitle>KaveNegarDotNet</AssemblyTitle>
+    <AssemblyName>KaveNegarDotNet</AssemblyName>
+    <PackageId>KaveNegarDotNet</PackageId>
+    <PackageTags>Kavenegar KaveNegarDotNet SMS</PackageTags>
+    <PackageProjectUrl>https://github.com/MeladKamari/Kavenegar.Core.git</PackageProjectUrl>
+    <PackageOutputPath>../Package</PackageOutputPath>
+    <OutputType>Library</OutputType>    
+    <RestorePackages>true</RestorePackages>
+    <BuildPackage>true</BuildPackage>
+    <Authors>Melad Kamari</Authors>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/MeladKamari/Kavenegar.Core.git</RepositoryUrl>
+    <Company>Kavenegar</Company>
+    <PackageIcon>logo.jpg</PackageIcon>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <WarningLevel>4</WarningLevel>
+    <NoWarn>CS1591,CS1998</NoWarn>
+    <Title>KavenegarDotNet</Title>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <AssemblyVersion>1.0.1</AssemblyVersion>
+    <FileVersion>1.0.1</FileVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugType>full</DebugType>
+    <DefineConstants>DEBUG;TRACE;$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <Optimize>true</Optimize>
+    <DebugType>embedded</DebugType>
+    <DefineConstants>TRACE;$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\logo.jpg">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+	  <None Include="..\LICENSE">
+		  <Pack>True</Pack>
+		  <PackagePath>\</PackagePath>
+	  </None>
+	  <None Include="..\README.md">
+		  <Pack>True</Pack>
+		  <PackagePath>\</PackagePath>
+	  </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <!-- Package references for net6.0 -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' OR '$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
+  </ItemGroup>
+
+  <!-- Package references for net8.0 -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
+  </ItemGroup>
+
+</Project>

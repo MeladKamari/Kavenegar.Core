@@ -7,11 +7,11 @@ The package can be installed via [nuget](https://www.nuget.org/packages/Kavenega
 
 ##### Package Manager
 ```
-Install-Package KavenegarDotNetCore -Version 1.0.7
+Install-Package KavenegarDotNet -Version 1.0.1
 ```
 ##### .NET CLI
 ```
-dotnet add package KavenegarDotNetCore --version 1.0.7
+dotnet add package KavenegarDotNet --version 1.0.1
 ```
 
 ## Usage
@@ -19,32 +19,28 @@ Send SMS Example:
 
 ```c#
 Console.OutputEncoding = Encoding.UTF8;
-try
+//In Program.cs o StartUp.cs Add KaveNegar to DI
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddKaveNegar(config =>
 {
-	var receptors = new List<string> { "<ReceptorNumber>" };
-
-	var api = new KavenegarApi("<ApiKey>");
-
-	var result = await api.Send("<SenderNumber>", receptors, "<Message>");
-
-	foreach (var r in result)
-	{
-		Console.Write($"{r.Messageid.ToString()}");
-	}
-
-}
-catch (ApiException ex)
-{
-	// در صورتی که خروجی وب سرویس 200 نباشد این خطارخ می دهد.
-	Console.Write("Message : " + ex.Message);
-}
-catch (HttpException ex)
-{
-	// در زمانی که مشکلی در برقرای ارتباط با وب سرویس وجود داشته باشد این خطا رخ می دهد
-	Console.Write("Message : " + ex.Message);
-}
+    config.ApiKey="ApiKey";
+} );
 ```
 
+```c#
+app.MapGet("/SendSmsWithKaveNegar", async (IKaveNegar kaveNegar) =>
+    {
+        var receptors = new List<string> { "<ReceptorNumber>" };
+        var result = await kaveNegar.Send("<SenderNumber>", receptors, "<Message>");
+        foreach (var r in result)
+        {
+            Console.Write($"{r.MessageId.ToString()}");
+        }        
+        return Results.Ok();
+    })
+    .WithName("SendSmsWithKaveNegar")
+    .WithOpenApi();
+```
 
 
 
@@ -76,7 +72,7 @@ catch (HttpException ex)
 کاوه نگار
 مراجعه نمایید .
 
- اگر در استفاده از کیت های سرویس کاوه نگار مشکلی یا پیشنهادی  داشتید ما را با یک Pull Request  یا  ارسال ایمیل به support@kavenegar.com  خوشحال کنید.
+ اگر در استفاده از کیت های سرویس کاوه نگار مشکلی یا پیشنهادی  داشتید ما را با یک Pull Request  یا  ارسال ایمیل به meladhamedani@gmail.com  خوشحال کنید.
  
 ##
 ![http://kavenegar.com](http://kavenegar.com/public/images/logo.png)		
