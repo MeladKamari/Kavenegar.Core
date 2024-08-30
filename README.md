@@ -19,7 +19,7 @@ Send SMS Example:
 
 ```c#
 Console.OutputEncoding = Encoding.UTF8;
-//In Program.cs o StartUp.cs Add KaveNegar to DI
+//In Program.cs or StartUp.cs Add KaveNegar to DI
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddKaveNegar(config =>
 {
