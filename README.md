@@ -70,12 +70,8 @@ app.MapGet("/SendSmsWithKaveNegar", async (IKaveNegar kaveNegar) =>
 مراجعه نمایید .
 
  اگر در استفاده از کیت های سرویس کاوه نگار مشکلی یا پیشنهادی  داشتید ما را با یک Pull Request  یا  ارسال ایمیل به meladhamedani@gmail.com  خوشحال کنید.
- 
+
 ##
-![http://kavenegar.com](http://kavenegar.com/public/images/logo.png)		
-
-[http://kavenegar.com](http://kavenegar.com)	
-
 </div>
 
 
