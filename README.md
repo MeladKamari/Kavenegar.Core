@@ -1,9 +1,8 @@
-# Kavenegar Dot Net Standard Client
+# Kavenegar Dot Net Client
 A cross-platform library for the Kavenegar sms web service; written in C#.
-This package uses [kavenegar-csharp](https://github.com/KaveNegar/kavenegar-csharp) project under the hood.
 
 ## Installation
-The package can be installed via [nuget](https://www.nuget.org/packages/KavenegarDotNetCore/):
+The package can be installed via [nuget](https://www.nuget.org/packages/KaveNegarDotNet):
 
 ##### Package Manager
 ```
@@ -18,15 +17,13 @@ dotnet add package KavenegarDotNet --version 1.0.2
 Send SMS Example:
 
 ```c#
-Console.OutputEncoding = Encoding.UTF8;
-//In Program.cs or StartUp.cs Add KaveNegar to DI
+//In Program.cs or StartUp.cs Add KaveNegar to Dependency Injection
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddKaveNegar(config =>
 {
     config.ApiKey="ApiKey";
 } );
 ```
-
 ```c#
 app.MapGet("/SendSmsWithKaveNegar", async (IKaveNegar kaveNegar) =>
     {
